@@ -13,6 +13,14 @@ module.exports = {
     "authenticationStrategies": {
       "local": {
         "passwordMinLength": 14
+      },
+      "activedirectory": {
+        title: "Active Directory",
+        type: "activedirectory",
+        url: '',
+        baseDN: '',
+        username: '',
+        password: ''
       }
       // "google": {
       //   "url": " ",

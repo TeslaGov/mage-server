@@ -15,7 +15,8 @@
 
       <div class="top-gap-xl bottom-gap-l">
         <div ng-repeat="strategy in thirdPartyStrategies" class="top-gap">
-          <oauth-signin strategy="strategy" strategy-type="signin"></oauth-signin>
+          <oauth-signin ng-if="strategy.type === 'oauth'" strategy="strategy" strategy-type="signin"></oauth-signin>
+          <active-directory-signin ng-if="strategy.type === 'activedirectory'" strategy="strategy" strategy-type="signin"></active-directory-signin>
         </div>
       </div>
 
