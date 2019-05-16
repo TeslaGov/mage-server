@@ -1,9 +1,9 @@
 module.exports = function(app, passport, provisioning, strategyConfig) {
 
   const log = require('winston')
-    , moment = require('moment')
-    , ActiveDirectoryStrategy = require('passport-activedirectory')\
+    , ActiveDirectoryStrategy = require('passport-activedirectory')
     , User = require('../models/user')
+    , Role = require('../models/role')
     , Device = require('../models/device')
     , api = require('../api')
     , config = require('../config.js')
@@ -40,51 +40,50 @@ module.exports = function(app, passport, provisioning, strategyConfig) {
   }
 
   passport.use(new ActiveDirectoryStrategy({
-      integrated: false,
-      ldap: {
-        url: strategyConfig.url,
-        baseDN: strategyConfig.baseDN,
-        username: strategyConfig.username,
-        password: strategyConfig.password
-      }
-    },
-    function(profile, ad, done) {
-      // TODO determine what profile info I get back
-      console.log('Successful active directory login profile is', profile);
-      User.getUserByAuthenticationId('activedirectory', profile.username, function(err, user) {
-        if (err) return done(err);
+    integrated: false,
+    ldap: {
+      url: strategyConfig.url,
+      baseDN: strategyConfig.baseDN,
+      username: strategyConfig.username,
+      password: strategyConfig.password
+    }
+  },
+  function(profile, ad, done) {
+    // TODO determine what profile info I get back
+    console.log('Successful active directory login profile is', profile);
+    User.getUserByAuthenticationId('activedirectory', profile.username, function(err, user) {
+      if (err) return done(err);
 
-        var email = profile.email;
+      var email = profile.email;
 
-        if (!user) {
-          // Create an account for the user
-          Role.getRole('USER_ROLE', function(err, role) {
-            if (err) return done(err);
+      if (!user) {
+        // Create an account for the user
+        Role.getRole('USER_ROLE', function(err, role) {
+          if (err) return done(err);
 
-            var user = {
-              username: profile.username,
-              displayName: profile.name,
-              email: profile.email,
-              active: false,
-              roleId: role._id,
-              authentication: {
-                type: 'activedirectory',
-                id: profile.username
-              }
-            };
+          var user = {
+            username: profile.username,
+            displayName: profile.name,
+            email: profile.email,
+            active: false,
+            roleId: role._id,
+            authentication: {
+              type: 'activedirectory',
+              id: profile.username
+            }
+          };
 
-            User.createUser(user, function(err, newUser) {
-              return done(err, newUser);
-            });
+          User.createUser(user, function(err, newUser) {
+            return done(err, newUser);
           });
-        } else if (!user.active) {
-          return done(null, user, { message: "User is not approved, please contact your MAGE administrator to approve your account."} );
-        } else {
-          return done(null, user, {access_token: accessToken});
-        }
-      });
+        });
+      } else if (!user.active) {
+        return done(null, user, { message: "User is not approved, please contact your MAGE administrator to approve your account."} );
+      } else {
+        return done(null, user, {access_token: accessToken});
+      }
     });
-  ));
+  }));
 
   // DEPRECATED retain old routes as deprecated until next major version.
   app.post(
