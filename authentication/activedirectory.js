@@ -85,107 +85,26 @@ module.exports = function(app, passport, provisioning, strategyConfig) {
     });
   }));
 
-  // DEPRECATED retain old routes as deprecated until next major version.
-  app.post(
-    '/api/login',
-    function authenticate(req, res, next) {
-      log.warn('DEPRECATED - The /api/login route will be removed in the next major version, please use /auth/local/signin');
+  app.get('/auth/activedirectory/signin', passport.authenticate('ActiveDirectory'));
 
-      passport.authenticate('local', function(err, user, info = {}) {
-        if (err) return next(err);
+  function authorizeUser(req, res, next) {
+    let token = req.param('access_token');
 
-        if (!user) {
-          return res.status(401).send(info.message);
-        }
-
-        req.user = user;
-        next();
-      })(req, res, next);
-    },
-    provisioning.provision.check(provisioning.strategy),
-    parseLoginMetadata,
-    function(req, res) {
-      new api.User().login(req.user,  req.provisionedDevice, req.loginOptions, function(err, token) {
-        res.json({
-          token: token.token,
-          expirationDate: token.expirationDate,
-          user: userTransformer.transform(req.user, {path: req.getRoot()}),
-          api: config.api
-        });
-      });
+    if (req.user) {
+      next();
+    } else if (token) {
+      log.warn('DEPRECATED - authorization with access_token has been deprecated, please use a session');
+      next(new Error("Not supported"));
     }
-  );
-
-  app.post(
-    '/auth/local/signin',
-    function authenticate(req, res, next) {
-      passport.authenticate('local', function(err, user, info = {}) {
-        if (err) return next(err);
-
-        if (!user) {
-          return res.status(401).send(info.message);
-        }
-
-        req.login(user, function(err) {
-          if (err) return next(err);
-
-          res.json({
-            user: userTransformer.transform(req.user, {path: req.getRoot()})
-          });
-        });
-      })(req, res, next);
-    }
-  );
-
-  // DEPRECATED retain old routes as deprecated until next major version.
-  app.post('/api/devices',
-    function authenticate(req, res, next) {
-      passport.authenticate('local', function(err, user) {
-        if (err) return next(err);
-
-        if (!user) {
-          return next('route');
-        }
-
-        req.login(user, function(err) {
-          next(err);
-        });
-      })(req, res, next);
-    },
-    function(req, res, next) {
-      log.warn('DEPRECATED - The /api/devices route will be removed in the next major version, please use /auth/local/devices');
-
-      var newDevice = {
-        uid: req.param('uid'),
-        name: req.param('name'),
-        registered: false,
-        description: req.param('description'),
-        userAgent: req.headers['user-agent'],
-        appVersion: req.param('appVersion'),
-        userId: req.user.id
-      };
-
-      Device.getDeviceByUid(newDevice.uid)
-        .then(device => {
-          if (device) {
-            // already exists, do not register
-            return res.json(device);
-          }
-
-          Device.createDevice(newDevice)
-            .then(device => res.json(device))
-            .catch(err => next(err));
-        })
-        .catch(err => next(err));
-    }
-  );
+  }
 
   // Create a new device
-  // Any authenticated user can create a new device, the registered field will be set to false.
-  app.post('/auth/local/devices',
-    isAuthenticated,
+  // Any authenticated user can create a new device, the registered field
+  // will be set to false.
+  app.post('/auth/activedirectory/devices',
+    authorizeUser,
     function(req, res, next) {
-      const newDevice = {
+      var newDevice = {
         uid: req.param('uid'),
         name: req.param('name'),
         registered: false,
