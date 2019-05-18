@@ -1,7 +1,7 @@
 module.exports = function(app, passport, provisioning, strategyConfig) {
 
   const log = require('winston')
-    , ActiveDirectoryStrategy = require('passport-activedirectory')
+    , WindowsStrategy = require('passport-windowsauth')
     , User = require('../models/user')
     , Role = require('../models/role')
     , Device = require('../models/device')
@@ -39,7 +39,7 @@ module.exports = function(app, passport, provisioning, strategyConfig) {
     })(req, res, next);
   }
 
-  passport.use(new ActiveDirectoryStrategy({
+  passport.use(new WindowsStrategy({
     integrated: false,
     ldap: {
       url: strategyConfig.url,
@@ -80,12 +80,12 @@ module.exports = function(app, passport, provisioning, strategyConfig) {
       } else if (!user.active) {
         return done(null, user, { message: "User is not approved, please contact your MAGE administrator to approve your account."} );
       } else {
-        return done(null, user, {access_token: accessToken});
+        return done(null, user);
       }
     });
   }));
 
-  app.get('/auth/activedirectory/signin', passport.authenticate('ActiveDirectory'));
+  app.post('/auth/activedirectory/signin', passport.authenticate('WindowsAuthentication'));
 
   function authorizeUser(req, res, next) {
     let token = req.param('access_token');
@@ -130,7 +130,7 @@ module.exports = function(app, passport, provisioning, strategyConfig) {
   );
 
   app.post(
-    '/auth/local/authorize',
+    '/auth/activedirectory/authorize',
     isAuthenticated,
     authorizeDevice,
     parseLoginMetadata,

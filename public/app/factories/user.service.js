@@ -75,7 +75,7 @@ function UserService($rootScope, $q, $uibModal, $http, $location, $timeout, $win
 
     data.appVersion = 'Web Client';
     $http.post('/auth/activedirectory/signin', $.param(data), {
-      headers: {"Content-Type": "application/x-www-form-urlencoded"},
+      headers: {"Content-Type": "application/json"},
       ignoreAuthModule:true
     }).then(function(response) {
       deferred.resolve({user: response.data.user});
