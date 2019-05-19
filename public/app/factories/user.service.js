@@ -14,7 +14,7 @@ function UserService($rootScope, $q, $uibModal, $http, $location, $timeout, $win
     signin: signin,
     googleSignin: googleSignin,
     googleSignup: googleSignup,
-    activeDirectorySignin: activeDirectorySignin,
+    ldapSignin: ldapSignin,
     oauthSignin: oauthSignin,
     authorize: authorize,
     logout: logout,
@@ -70,11 +70,11 @@ function UserService($rootScope, $q, $uibModal, $http, $location, $timeout, $win
     return promise;
   }
 
-  function activeDirectorySignin(data) {
+  function ldapSignin(data) {
     var deferred = $q.defer();
 
     data.appVersion = 'Web Client';
-    $http.post('/auth/activedirectory/signin', $.param(data), {
+    $http.post('/auth/ldap/signin', $.param(data), {
       headers: {"Content-Type": "application/json"},
       ignoreAuthModule:true
     }).then(function(response) {

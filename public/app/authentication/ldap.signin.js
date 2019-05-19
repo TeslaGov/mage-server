@@ -1,20 +1,20 @@
 module.exports = {
-  template: require('./activedirectory.signin.html'),
+  template: require('./ldap.signin.html'),
   bindings: {
     strategy: '<',
     signinType: '@',
     onSignin: '&'
   },
-  controller: ActiveDirectorySigninController
+  controller: LdapSigninController
 };
 
-ActiveDirectorySigninController.$inject = ['$uibModal', 'UserService'];
+LdapSigninController.$inject = ['$uibModal', 'UserService'];
 
-function ActiveDirectorySigninController($uibModal, UserService) {
+function LdapSigninController($uibModal, UserService) {
 
   this.signin = function() {
     var self = this;
-    UserService.activeDirectorySignin({username: this.username, password: this.password}).then(function(response) {
+    UserService.ldapSignin({username: this.username, password: this.password}).then(function(response) {
       var user = response.user;
 
       // User has an account, but its not active

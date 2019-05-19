@@ -40,8 +40,7 @@ module.exports = function(app, passport, provisioning, strategyConfig) {
   }
 
   passport.use(new LdapStrategy({
-    integrated: false,
-    ldap: {
+    server: {
       url: strategyConfig.url,
       bindDN: strategyConfig.bindDN,
       bindCredentials: strategyConfig.bindCredentials,
@@ -51,7 +50,7 @@ module.exports = function(app, passport, provisioning, strategyConfig) {
   function(profile, ad, done) {
     // TODO determine what profile info I get back
     console.log('Successful active directory login profile is', profile);
-    User.getUserByAuthenticationId('activedirectory', profile.username, function(err, user) {
+    User.getUserByAuthenticationId('ldap', profile.username, function(err, user) {
       if (err) return done(err);
 
       var email = profile.email;
@@ -68,7 +67,7 @@ module.exports = function(app, passport, provisioning, strategyConfig) {
             active: false,
             roleId: role._id,
             authentication: {
-              type: 'activedirectory',
+              type: 'ldap',
               id: profile.username
             }
           };
@@ -85,7 +84,7 @@ module.exports = function(app, passport, provisioning, strategyConfig) {
     });
   }));
 
-  app.post('/auth/activedirectory/signin', passport.authenticate('WindowsAuthentication'));
+  app.post('/auth/ldap/signin', passport.authenticate('ldapauth'));
 
   function authorizeUser(req, res, next) {
     let token = req.param('access_token');
@@ -101,7 +100,7 @@ module.exports = function(app, passport, provisioning, strategyConfig) {
   // Create a new device
   // Any authenticated user can create a new device, the registered field
   // will be set to false.
-  app.post('/auth/activedirectory/devices',
+  app.post('/auth/ldap/devices',
     authorizeUser,
     function(req, res, next) {
       var newDevice = {
@@ -130,7 +129,7 @@ module.exports = function(app, passport, provisioning, strategyConfig) {
   );
 
   app.post(
-    '/auth/activedirectory/authorize',
+    '/auth/ldap/authorize',
     isAuthenticated,
     authorizeDevice,
     parseLoginMetadata,

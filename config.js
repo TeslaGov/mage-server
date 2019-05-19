@@ -14,9 +14,9 @@ module.exports = {
       "local": {
         "passwordMinLength": 14
       },
-      "activedirectory": {
-        title: "Active Directory",
-        type: "activedirectory",
+      "ldap": {
+        title: "LDAP Strategy",
+        type: "ldap",
         url: '',
         baseDN: '',
         username: '',
