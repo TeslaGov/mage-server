@@ -1,7 +1,7 @@
 module.exports = function(app, passport, provisioning, strategyConfig) {
 
   const log = require('winston')
-    , WindowsStrategy = require('passport-windowsauth')
+    , LdapStrategy = require('passport-ldapauth')
     , User = require('../models/user')
     , Role = require('../models/role')
     , Device = require('../models/device')
@@ -39,13 +39,13 @@ module.exports = function(app, passport, provisioning, strategyConfig) {
     })(req, res, next);
   }
 
-  passport.use(new WindowsStrategy({
+  passport.use(new LdapStrategy({
     integrated: false,
     ldap: {
       url: strategyConfig.url,
-      baseDN: strategyConfig.baseDN,
-      username: strategyConfig.username,
-      password: strategyConfig.password
+      bindDN: strategyConfig.bindDN,
+      bindCredentials: strategyConfig.bindCredentials,
+      searchBase: strategyConfig.searchBase
     }
   },
   function(profile, ad, done) {
