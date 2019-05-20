@@ -44,16 +44,15 @@ module.exports = function(app, passport, provisioning, strategyConfig) {
       url: strategyConfig.url,
       bindDN: strategyConfig.bindDN,
       bindCredentials: strategyConfig.bindCredentials,
-      searchBase: strategyConfig.searchBase
+      searchBase: strategyConfig.searchBase,
+      searchFilter: strategyConfig.searchFilter
     }
   },
-  function(profile, ad, done) {
+  function(profile, done) {
     // TODO determine what profile info I get back
     console.log('Successful active directory login profile is', profile);
     User.getUserByAuthenticationId('ldap', profile.username, function(err, user) {
       if (err) return done(err);
-
-      var email = profile.email;
 
       if (!user) {
         // Create an account for the user
@@ -61,14 +60,14 @@ module.exports = function(app, passport, provisioning, strategyConfig) {
           if (err) return done(err);
 
           var user = {
-            username: profile.username,
-            displayName: profile.name,
-            email: profile.email,
+            username: profile.sAMAccountName,
+            displayName: profile.displayName,
+            email: profile.userPrincipalName,
             active: false,
             roleId: role._id,
             authentication: {
               type: 'ldap',
-              id: profile.username
+              id: profile.sAMAcountName
             }
           };
 
@@ -84,7 +83,26 @@ module.exports = function(app, passport, provisioning, strategyConfig) {
     });
   }));
 
-  app.post('/auth/ldap/signin', passport.authenticate('ldapauth'));
+  app.post(
+    '/auth/ldap/signin',
+    function authenticate(req, res, next) {
+      passport.authenticate('ldapauth', function(err, user, info = {}) {
+        if (err) return next(err);
+
+        if (!user) {
+          return res.status(401).send(info.message);
+        }
+
+        req.login(user, function(err) {
+          if (err) return next(err);
+
+          res.json({
+            user: userTransformer.transform(req.user, {path: req.getRoot()})
+          });
+        });
+      })(req, res, next);
+    }
+  );
 
   function authorizeUser(req, res, next) {
     let token = req.param('access_token');

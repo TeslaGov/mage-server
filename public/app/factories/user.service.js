@@ -74,7 +74,7 @@ function UserService($rootScope, $q, $uibModal, $http, $location, $timeout, $win
     var deferred = $q.defer();
 
     data.appVersion = 'Web Client';
-    $http.post('/auth/ldap/signin', $.param(data), {
+    $http.post('/auth/ldap/signin', data, {
       headers: {"Content-Type": "application/json"},
       ignoreAuthModule:true
     }).then(function(response) {
