@@ -51,7 +51,9 @@ module.exports = function(app, passport, provisioning, strategyConfig) {
   function(profile, done) {
     // TODO determine what profile info I get back
     console.log('Successful active directory login profile is', profile);
-    User.getUserByAuthenticationId('ldap', profile.username, function(err, user) {
+
+    const username = profile[strategyConfig.ldapUsernameField];
+    User.getUserByAuthenticationId('ldap', username, function(err, user) {
       if (err) return done(err);
 
       if (!user) {
@@ -60,14 +62,14 @@ module.exports = function(app, passport, provisioning, strategyConfig) {
           if (err) return done(err);
 
           var user = {
-            username: profile.sAMAccountName,
-            displayName: profile.displayName,
-            email: profile.userPrincipalName,
+            username: username,
+            displayName: profile[strategyConfig.ldapDisplayNameField],
+            email: profile[strategyConfig.ldapEmailField],
             active: false,
             roleId: role._id,
             authentication: {
               type: 'ldap',
-              id: profile.sAMAcountName
+              id: username
             }
           };
 

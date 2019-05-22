@@ -20,7 +20,10 @@ module.exports = {
         url: '',
         baseDN: '',
         username: '',
-        password: ''
+        password: '',
+        ldapUsernameField: '',
+        ldapDisplayNameField: '',
+        ldapEmailField: ''
       }
       // "google": {
       //   "url": " ",
