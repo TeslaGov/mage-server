@@ -4,6 +4,7 @@ import mage from './mage/mage.component';
 import about from './about/about.component';
 import fileUpload from './file-upload/file.upload.component';
 import fileBrowser from './file-upload/file.browser.component';
+import cookies from 'js-cookie';
 
 /* Fix for IE */
 if (!Date.now) { Date.now = function() { return +(new Date); }; }
@@ -320,9 +321,9 @@ function config($httpProvider, $stateProvider, $urlRouterProvider,  $animateProv
   });
 }
 
-run.$inject = ['$rootScope', '$uibModal', '$templateCache', '$state', 'Api'];
+run.$inject = ['$rootScope', '$uibModal', '$templateCache', '$state', 'Api', 'LocalStorageService', 'UserService'];
 
-function run($rootScope, $uibModal, $templateCache, $state, Api) {
+function run($rootScope, $uibModal, $templateCache, $state, Api, LocalStorageService, UserService) {
   $templateCache.put("observation/observation-important.html", require("./observation/observation-important.html"));
 
   $rootScope.$on('event:auth-loginRequired', function(e, response) {
@@ -365,4 +366,17 @@ function run($rootScope, $uibModal, $templateCache, $state, Api) {
       });
     }
   });
+
+  trySSO(LocalStorageService, UserService);
+}
+
+function trySSO(LocalStorageService, UserService) {
+  const ssoTokenCookie = cookies.get('mage-sso-token');
+
+  // if SSO token exists, set it in local storage and fetch current user
+  if (ssoTokenCookie) {
+    LocalStorageService.setToken(ssoTokenCookie);
+
+    return UserService.getMyself();
+  }
 }
