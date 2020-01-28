@@ -89,6 +89,7 @@
     "jquery": "^3.7.1",
     "jquery-file-download": "1.4.6",
     "jquery-minicolors": "2.1.10",
+    "js-cookie": "^2.2.0",
     "leaflet": "1.7.1",
     "leaflet-editable": "1.2.0",
     "leaflet-groupedlayercontrol": "git+https://github.com/newmanw/leaflet-groupedlayercontrol.git#master",
