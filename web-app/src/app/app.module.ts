@@ -1,5 +1,5 @@
 import { BrowserModule } from '@angular/platform-browser';
-import { NgModule } from '@angular/core';
+import { NgModule, ApplicationRef, DoBootstrap } from '@angular/core';
 
 import { UpgradeModule } from '@angular/upgrade/static';
 import { UIRouterUpgradeModule } from '@uirouter/angular-hybrid';
@@ -47,6 +47,7 @@ import { MatStepperModule } from '@angular/material/stepper';
 
 import { MatDatetimepickerModule } from '@mat-datetimepicker/core'
 import { MatMomentDatetimeModule } from '@mat-datetimepicker/moment'
+import { InputMaskModule } from '@ngneat/input-mask'
 
 import { ZoomComponent } from './map/controls/zoom.component';
 import { AddObservationComponent } from './map/controls/add-observation.component';
@@ -83,10 +84,12 @@ import { ObservationListComponent } from './observation/observation-list/observa
 import { UserViewComponent } from './user/user-view/user-view.component';
 import { UserListItemComponent } from './user/user-list/user-list-item.component';
 import { UserListComponent } from './user/user-list/user-list.component';
+import { FeedListComponent } from './feed/feed-list/feed-list.component';
 import { FeedPanelComponent } from './feed-panel/feed-panel.component';
 
 import {
   mapServiceProvider,
+  eventResourceProvider,
   eventServiceProvider,
   localStorageServiceProvider,
   geometryServiceProvider,
@@ -111,6 +114,7 @@ import {
 } from './observation/observation-view/observation-view';
 
 import {
+  DMSValidatorDirective,
   MGRSValidatorDirective,
   ObservationEditCheckboxComponent,
   ObservationEditDateComponent,
@@ -128,14 +132,20 @@ import {
   ObservationEditComponent
 } from './observation/observation-edit/observation-edit';
 
+import { FeedItemComponent } from './feed/feed-item/feed-item.component';
+import { FeedItemMapPopupComponent } from './feed/feed-item/feed-item-map/feed-item-map-popup.component';
+import { FeedItemSummaryModule } from './feed/feed-item/feed-item-summary/feed-item-summary.module';
+import { FeedPanelTabComponent } from './feed-panel/feed-panel-tab.component';
+import { AdminFeedsModule } from './admin/admin-feeds/admin-feeds.module';
 import { ObservationPopupComponent } from './observation/observation-popup/observation-popup.component';
 import { UserPopupComponent } from './user/user-popup/user-popup.component';
+import { StaticIconModule } from '@ngageoint/mage.web-core-lib/static-icon'
+import { MageCommonModule } from '@ngageoint/mage.web-core-lib/common'
+import { AdminModule } from './admin/admin.module'
 import { AdminSettingsComponent } from './admin/admin-settings/admin-settings.component';
 import { AdminBreadcrumbModule } from './admin/admin-breadcrumb/admin-breadcrumb.module';
-import { AuthenticationSettingsComponent, AuthenticationCreateComponent, AuthenticationDeleteComponent, SecurityBannerComponent, SecurityDisclaimerComponent, DuplicateKeyComponent, EditSettingComponent, DeleteSettingComponent, IconUploadComponent } from './admin/admin-settings/admin-settings';
-import { PasswordPolicyComponent } from './admin/admin-settings/authentication-settings/password-policy/password-policy.component';
-import { GenericSettingsComponent } from './admin/admin-settings/authentication-settings/generic-settings/generic-settings.component';
-import { AccountLockComponent } from './admin/admin-settings/authentication-settings/account-lock/account-lock.component';
+import { ContactInfoComponent } from './admin/admin-settings/admin-settings';
+import { SecurityBannerComponent, SecurityDisclaimerComponent } from './admin/admin-settings/admin-settings';
 import { DatetimePickerComponent } from './datetime-picker/datetime-picker.component';
 import { CommonModule } from '@angular/common';
 import { ObservationOptionsComponent } from './observation/observation-view/observation-options.component';
@@ -146,6 +156,28 @@ import { ObservationEditAttachmentComponent } from './observation/observation-ed
 import { ObservationEditPasswordComponent } from './observation/observation-edit/observation-edit-password/observation-edit-password.component';
 import { ObservationViewPasswordComponent } from './observation/observation-view/observation-view-password/observation-view-password.component';
 import { PasswordPipe } from './observation/observation-view/observation-view-password/password.pipe';
+import { ContactComponent } from './contact/contact.component';
+import { ContactDialogComponent } from "./contact/contact-dialog.component";
+import { AdminAuthenticationOidcComponent } from './admin/admin-authentication/admin-authentication-oidc/admin-authentication-oidc.component';
+import { AuthenticationDeleteComponent } from './admin/admin-authentication/admin-authentication-delete/admin-authentication-delete.component';
+import { AdminAuthenticationLocalComponent } from './admin/admin-authentication/admin-authentication-local/admin-authentication-local.component';
+import { PasswordPolicyComponent } from './admin/admin-authentication/admin-authentication-local//password-policy/password-policy.component';
+import { AccountLockComponent } from './admin/admin-authentication/admin-authentication-local//account-lock/account-lock.component';
+import { AdminAuthenticationComponent } from './admin/admin-authentication/admin-authentication.component';
+import { IconUploadComponent } from './admin/admin-authentication/admin-authentication-create/icon-upload/icon-upload.component';
+import { AuthenticationCreateComponent } from './admin/admin-authentication/admin-authentication-create/admin-authentication-create.component';
+import { AdminAuthenticationOAuth2Component } from './admin/admin-authentication/admin-authentication-oauth2/admin-authentication-oauth2.component';
+import { AdminAuthenticationLDAPComponent } from './admin/admin-authentication/admin-authentication-ldap/admin-authentication-ldap.component';
+import { AdminAuthenticationSAMLComponent } from './admin/admin-authentication/admin-authentication-saml/admin-authentication-saml.component';
+import { ButtonPreviewComponent } from './admin/admin-authentication/admin-authentication-create/button-preview/button-preview.component';
+import { AdminAuthenticationSettingsComponent } from './admin/admin-authentication/admin-authentication-settings.component';
+import { AdminSettingsUnsavedComponent } from './admin/admin-settings/admin-settings-unsaved/admin-settings-unsaved.component';
+import { ExportDataComponent } from './export/export-data/export-data.component';
+import { NoExportsComponent } from './export/empty-state/no-exports.component';
+import { AdminEventFormPreviewComponent } from './admin/admin-event/admin-event-form/admin-event-form-preview/admin-event-form-preview.component';
+import { AdminEventFormPreviewDialogComponent } from './admin/admin-event/admin-event-form/admin-event-form-preview/admin-event-form-preview-dialog.component';
+import { AdminMapComponent } from './admin/admin-map/admin-map.component';
+
 
 @NgModule({
   declarations: [
@@ -161,8 +193,13 @@ import { PasswordPipe } from './observation/observation-view/observation-view-pa
     LayerHeaderComponent,
     LayerContentComponent,
     ColorPickerComponent,
+    DMSValidatorDirective,
     MGRSValidatorDirective,
+    FeedItemComponent,
+    FeedItemMapPopupComponent,
+    FeedListComponent,
     FeedPanelComponent,
+    FeedPanelTabComponent,
     ObservationListItemComponent,
     ObservationEditComponent,
     ObservationDeleteComponent,
@@ -202,38 +239,47 @@ import { PasswordPipe } from './observation/observation-view/observation-view-pa
     UserViewComponent,
     UserListItemComponent,
     UserListComponent,
-    FeedPanelComponent,
     ObservationPopupComponent,
     UserPopupComponent,
     AdminSettingsComponent,
-    AuthenticationSettingsComponent,
     PasswordPolicyComponent,
-    GenericSettingsComponent,
     AccountLockComponent,
     AuthenticationCreateComponent,
     AuthenticationDeleteComponent,
     SecurityBannerComponent,
     SecurityDisclaimerComponent,
-    DuplicateKeyComponent,
-    EditSettingComponent,
-    DeleteSettingComponent,
     IconUploadComponent,
+    ContactInfoComponent,
     DatetimePickerComponent,
     ExportComponent,
     ExportDialogComponent,
-    ObservationEditFormPickerComponent,
-    ObservationOptionsComponent,
+    ExportDataComponent,
+    NoExportsComponent,
     ObservationEditDiscardComponent,
     ObservationEditPasswordComponent,
     ObservationViewPasswordComponent,
-    PasswordPipe
+    PasswordPipe,
+    ContactComponent,
+    ContactDialogComponent,
+    AdminAuthenticationOidcComponent,
+    AdminAuthenticationLocalComponent,
+    AdminAuthenticationComponent,
+    AdminAuthenticationOAuth2Component,
+    AdminAuthenticationLDAPComponent,
+    AdminAuthenticationSAMLComponent,
+    ButtonPreviewComponent,
+    AdminAuthenticationSettingsComponent,
+    AdminSettingsUnsavedComponent,
+    AdminEventFormPreviewComponent,
+    AdminEventFormPreviewDialogComponent,
+    AdminMapComponent
   ],
   imports: [
     CommonModule,
     BrowserModule,
     HttpClientModule,
     UpgradeModule,
-    UIRouterUpgradeModule.forRoot({ states: [] }),
+    UIRouterUpgradeModule.forRoot(),
     FormsModule,
     ReactiveFormsModule,
     BrowserAnimationsModule,
@@ -264,11 +310,14 @@ import { PasswordPipe } from './observation/observation-view/observation-view-pa
     MatExpansionModule,
     MatListModule,
     MatRippleModule,
-    NgxMatSelectSearchModule,
     MatChipsModule,
     MatSidenavModule,
     MatSnackBarModule,
     MatProgressBarModule,
+    MatTableModule,
+    MatPaginatorModule,
+    MatSortModule,
+    MageCommonModule,
     MomentModule,
     GeometryModule,
     ScrollingModule,
@@ -281,15 +330,21 @@ import { PasswordPipe } from './observation/observation-view/observation-view-pa
     MatSortModule,
     MatSnackBarModule,
     MatDatepickerModule,
-    MatNativeDateModule,
+    NgxMatSelectSearchModule,
+    AdminModule,
+    AdminFeedsModule,
+    FeedItemSummaryModule,
+    StaticIconModule,
     AdminBreadcrumbModule,
     MatSlideToggleModule,
-    MatStepperModule
+    MatStepperModule,
+    InputMaskModule.forRoot()
   ],
   providers: [
     mapServiceProvider,
     userServiceProvider,
     filterServiceProvider,
+    eventResourceProvider,
     eventServiceProvider,
     geometryServiceProvider,
     observationServiceProvider,
@@ -303,7 +358,8 @@ import { PasswordPipe } from './observation/observation-view/observation-view-pa
     { provide: HTTP_INTERCEPTORS, useClass: TokenInterceptorService, multi: true }
   ]
 })
-export class AppModule {
+export class AppModule implements DoBootstrap {
   // eslint-disable-next-line @typescript-eslint/no-empty-function
-  public ngDoBootstrap(): void {}
+  public ngDoBootstrap(appRef: ApplicationRef): void {
+  }
 }

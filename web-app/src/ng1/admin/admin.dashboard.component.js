@@ -53,7 +53,7 @@ class AdminDashboardController {
       this.layerCount = data.count;
     });
 
-    this._LoginService.query({ limit: this.loginResultsLimit }).success(loginPage => {
+    this._LoginService.query({ limit: this.loginResultsLimit }).then(loginPage => {
       this.loginPage = loginPage;
       if (loginPage.logins.length) {
         this.firstLogin = loginPage.logins[0];
@@ -154,7 +154,7 @@ class AdminDashboardController {
     if (searchString == null) {
       searchString = '.*';
     }
-    
+
     return this.DevicePagingService.search(this.deviceStateAndData['all'], searchString).then(devices => {
       this.loginDeviceSearchResults = devices;
 
@@ -235,7 +235,7 @@ class AdminDashboardController {
   }
 
   pageLogin(url) {
-    this._LoginService.query({ url: url, filter: this.filter, limit: this.loginResultsLimit }).success(loginPage => {
+    this._LoginService.query({ url: url, filter: this.filter, limit: this.loginResultsLimit }).then(loginPage => {
 
       if (loginPage.logins.length) {
         this.loginPage = loginPage;
@@ -252,8 +252,7 @@ class AdminDashboardController {
     if (this.login.endDate) {
       this.filter.endDate = moment(this.login.endDate).endOf('day').toDate();
     }
-
-    this._LoginService.query({ filter: this.filter, limit: this.loginResultsLimit }).success(loginPage => {
+    this._LoginService.query({ filter: this.filter, limit: this.loginResultsLimit }).then(loginPage => {
       this.showNext = loginPage.logins.length !== 0;
       this.showPrevious = false;
       this.loginPage = loginPage;

@@ -19,17 +19,11 @@
   height: 100%;
 }
 
-.export-panel-container {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-
 .export-filter {
   width: 100%;
 }
 
-.mat-dialog-content, .export-content {
+.mat-dialog-content {
   flex: 1 1 auto;
   max-height: unset;
 }
@@ -73,49 +67,6 @@
   justify-content: center;
 }
 
-.time-group {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  flex: 1;
-}
-
-.locale-button {
-  color: #1E88E5;
-  height: 51px;
-  margin-bottom: 18px;
-}
-
-.export-options {
-  margin-left: 16px;
-  margin-bottom: 16px;
-}
-
-.export-format {
-  margin-bottom: 16px;
-}
-
-.advanced {
-  margin-bottom: 8px;
-}
-
-.advanced-header {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-}
-
-.advanced-header__title {
-  margin: 0 8px 0 0;
-  color: rgba(0, 0, 0, .87);
-  font-family: Roboto, sans-serif;
-}
-
-.advanced-content {
-  margin-top: 8px;
-  margin-left: 16px;
-}
-
 .export-details-icon {
   height: 18px;
   width: 18px;
@@ -128,10 +79,6 @@
   margin-left: 16px;
 }
 
-.time-field {
-  width: 100%;
-}
-
 .export-detail-row {
   min-height: 0;
 }
@@ -139,4 +86,8 @@
 .export-detail {
   overflow: hidden;
   display: flex;
+}
+
+mat-checkbox {
+  margin: 0 10px;
 }

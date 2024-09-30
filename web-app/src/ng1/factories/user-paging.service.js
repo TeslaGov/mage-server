@@ -3,8 +3,7 @@ module.exports = UserPagingService;
 UserPagingService.$inject = ['UserService', '$q'];
 
 function UserPagingService(UserService, $q) {
-
-  const service = {
+  return {
     constructDefault,
     refresh,
     count,
@@ -16,52 +15,72 @@ function UserPagingService(UserService, $q) {
     search
   };
 
-  return service;
-
   function constructDefault() {
-    const itemsPerPage = 10;
-    const stateAndData = new Map();
-    stateAndData['all'] = {
-      countFilter: {},
-      userFilter: { limit: itemsPerPage, sort: { displayName: 1, _id: 1 } },
-      searchFilter: '',
-      userCount: 0,
-      pageInfo: {}
+    return {
+      all: {
+        countFilter: {},
+        userFilter: {
+          pageSize: 10,
+          pageIndex: 0,
+          sort: { displayName: 1, _id: 1 }
+        },
+        searchFilter: '',
+        userCount: 0,
+        pageInfo: {}
+      },
+      active: {
+        countFilter: { active: true },
+        userFilter: {
+          pageSize: 10,
+          pageIndex: 0,
+          sort: { displayName: 1, _id: 1 },
+          active: true
+        },
+        searchFilter: '',
+        userCount: 0,
+        pageInfo: {}
+      },
+      inactive: {
+        countFilter: { active: false },
+        userFilter: {
+          pageSize: 10,
+          pageIndex: 0,
+          sort: { displayName: 1, _id: 1 },
+          active: false
+        },
+        searchFilter: '',
+        userCount: 0,
+        pageInfo: {}
+      },
+      disabled: {
+        countFilter: { enabled: false },
+        userFilter: {
+          pageSize: 10,
+          pageIndex: 0,
+          sort: { displayName: 1, _id: 1 },
+          enabled: false
+        },
+        searchFilter: '',
+        userCount: 0,
+        pageInfo: {}
+      }
     };
-    stateAndData['active'] = {
-      countFilter: { active: true },
-      userFilter: { active: true, limit: itemsPerPage, sort: { displayName: 1, _id: 1 } },
-      searchFilter: '',
-      userCount: 0,
-      pageInfo: {}
-    };
-    stateAndData['inactive'] = {
-      countFilter: { active: false },
-      userFilter: { active: false, limit: itemsPerPage, sort: { displayName: 1, _id: 1 } },
-      searchFilter: '',
-      userCount: 0,
-      pageInfo: {}
-    };
-    stateAndData['disabled'] = {
-      countFilter: { enabled: false },
-      userFilter: { enabled: false, limit: itemsPerPage, sort: { displayName: 1, _id: 1 } },
-      searchFilter: '',
-      userCount: 0,
-      pageInfo: {}
-    };
-
-    return stateAndData;
   }
 
   function refresh(stateAndData) {
-
     const promises = [];
-
     for (const [key, value] of Object.entries(stateAndData)) {
+      let backendParams = {
+        pageSize: value.userFilter.limit,
+        pageIndex: value.userFilter.page,
+        active: value.userFilter.active,
+        enabled: value.userFilter.enabled,
+        term: value.searchFilter
+      };
 
-      const promise = $q.all({ count: UserService.getUserCount(value.countFilter), pageInfo: UserService.getAllUsers(value.userFilter) }).then(result => {
-        stateAndData[key].userCount = result.count.data.count;
-        stateAndData[key].pageInfo = result.pageInfo;
+      const promise = UserService.getAllUsers(backendParams).then((page) => {
+        stateAndData[key].userCount = page.totalCount;
+        stateAndData[key].pageInfo = page;
         $q.resolve(key);
       });
 
@@ -76,94 +95,96 @@ function UserPagingService(UserService, $q) {
   }
 
   function hasNext(data) {
-    let status = false;
-
-    if (data.pageInfo && data.pageInfo.links) {
-      status = data.pageInfo.links.next != null &&
-        data.pageInfo.links.next !== "";
-    }
-
-    return status;
+    return (
+      data.pageInfo && data.pageInfo.links && data.pageInfo.links.next !== null
+    );
   }
 
   function next(data) {
-    return move(data.pageInfo.links.next, data);
+    if (hasNext(data)) {
+      data.userFilter.pageIndex = data.pageInfo.links.next;
+      data.userFilter.term = data.searchFilter;
+      return move(data.userFilter, data);
+    }
+    return $q.resolve(data.pageInfo.items);
   }
 
   function hasPrevious(data) {
-    let status = false;
-
-    if (data.pageInfo && data.pageInfo.links) {
-      status = data.pageInfo.links.prev != null &&
-        data.pageInfo.links.prev !== "";
-    }
-
-    return status;
+    return (
+      data.pageInfo && data.pageInfo.links && data.pageInfo.links.prev !== null
+    );
   }
 
-  function previous(data) {
-    return move(data.pageInfo.links.prev, data);
-  }
 
-  function move(start, data) {
-    const filter = JSON.parse(JSON.stringify(data.userFilter));
-    filter.start = start;
-    return UserService.getAllUsers(filter).then(pageInfo => {
+ function previous(data) {
+   if (hasPrevious(data)) {
+     data.userFilter.pageIndex = data.pageInfo.links.prev;
+     data.userFilter.term = data.searchFilter;
+     return move(data.userFilter, data);
+   }
+   return $q.resolve(data.pageInfo.items);
+ }
+
+
+  function move(filter, data) {
+    return UserService.getAllUsers(filter).then((pageInfo) => {
       data.pageInfo = pageInfo;
-      return $q.resolve(pageInfo.users);
+      return $q.resolve(pageInfo.items);
     });
   }
+
 
   function users(data) {
     let users = [];
 
-    if (data.pageInfo && data.pageInfo.users) {
-      users = data.pageInfo.users;
+    if (data.pageInfo && data.pageInfo.items) {
+      users = data.pageInfo.items;
     }
 
     return users;
   }
 
-  function search(data, userSearch) {
+ function search(data, userSearch) {
+   const previousSearch = data.searchFilter;
 
-    if (data.pageInfo == null || data.pageInfo.users == null) {
-      return $q.resolve([]);
-    }
+   switch (true) {
+     case previousSearch === '' && userSearch === '':
+       return performNoSearch(data);
+     case previousSearch !== '' && userSearch === '':
+       return clearSearch(data);
+     case previousSearch === userSearch:
+       return continueExistingSearch(data);
+     default:
+       return performNewSearch(data, userSearch);
+   }
+ }
 
-    const previousSearch = data.searchFilter;
 
-    let promise = null;
+  function performNoSearch(data) {
+    return $q.resolve(data.pageInfo.items);
+  }
 
-    if (previousSearch == '' && userSearch == '') {
-      //Not performing a seach
-      promise = $q.resolve(data.pageInfo.users);
-    } else if (previousSearch != '' && userSearch == '') {
-      //Clearing out the search
-      data.searchFilter = '';
-      delete data.userFilter['or'];
+  function clearSearch(data) {
+    data.searchFilter = '';
+    delete data.userFilter['or'];
+    return UserService.getAllUsers(data.userFilter).then((pageInfo) => {
+      data.pageInfo = pageInfo;
+      return $q.resolve(data.pageInfo.items);
+    });
+  }
 
-      promise = UserService.getAllUsers(data.userFilter).then(pageInfo => {
-        data.pageInfo = pageInfo;
-        return $q.resolve(data.pageInfo.users);
-      });
-    } else if (previousSearch == userSearch) {
-      //Search is being performed, no need to keep searching the same info over and over
-      promise = $q.resolve(data.pageInfo.users);
-    } else {
-      //Perform the server side searching
-      data.searchFilter = userSearch;
+  function continueExistingSearch(data) {
+    return $q.resolve(data.pageInfo.items);
+  }
 
-      const filter = data.userFilter;
-      filter.or = {
-        displayName: '.*' + userSearch + '.*',
-        email: '.*' + userSearch + '.*'
-      };
-      promise = UserService.getAllUsers(filter).then(pageInfo => {
-        data.pageInfo = pageInfo;
-        return $q.resolve(data.pageInfo.users)
-      });
-    }
-
-    return promise;
+  function performNewSearch(data, userSearch) {
+    data.searchFilter = userSearch;
+    // Reset pageIndex to 0 for a new search
+    data.userFilter.pageIndex = 0;
+    const filter = { ...data.userFilter, term: userSearch };
+    return UserService.getAllUsers(filter).then((pageInfo) => {
+      data.pageInfo = pageInfo;
+      return $q.resolve(pageInfo.items);
+    });
   }
 }

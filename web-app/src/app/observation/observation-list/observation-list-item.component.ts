@@ -1,9 +1,9 @@
 import { Component, Inject, Input, OnChanges, SimpleChanges, ViewChild } from '@angular/core'
 import { EventService, LocalStorageService, MapService, UserService } from 'src/app/upgrade/ajs-upgraded-providers'
 import * as moment from 'moment'
-import { FeedPanelService } from 'src/app/feed-panel/feed-panel.service'
 import { MatRipple } from '@angular/material/core';
 import { animate, style, transition, trigger } from '@angular/animations'
+import { FeedPanelService } from 'src/app/feed-panel/feed-panel.service'
 
 @Component({
   selector: 'observation-list-item',
@@ -31,7 +31,7 @@ export class ObservationListItemComponent implements OnChanges {
   edit = false
   canEdit = false
   canEditImportant = false
- 
+
   favorites = 0
   isUserFavorite = false
 
@@ -45,6 +45,8 @@ export class ObservationListItemComponent implements OnChanges {
   primaryFeedField: any = {}
   secondaryFeedField: any = {}
 
+  attachments = []
+
   constructor(
     @Inject(MapService) private mapService: any,
     @Inject(UserService) private userService: any,
@@ -55,11 +57,11 @@ export class ObservationListItemComponent implements OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes.event || changes.form || changes.observation) {
+    if (changes.event?.currentValue || changes.form?.currentValue || changes.observation?.currentValue) {
       this.updateItem()
     }
 
-    if (changes.observation) {
+    if (changes.observation?.currentValue) {
       this.updateFavorites()
       this.importantEditor.description = this.observation.important ? this.observation.important.description : null
     }
@@ -99,7 +101,7 @@ export class ObservationListItemComponent implements OnChanges {
   }
 
   downloadUrl(): string {
-    return `/api/events/${this.observation.eventId}/observations/${this.observation.id}.zip?access_token=${this.localStorageService.getToken()}`
+    return `/api/events/${this.observation?.eventId}/observations/${this.observation?.id}.zip?access_token=${this.localStorageService.getToken()}`
   }
 
   onRipple(): void {
@@ -114,7 +116,7 @@ export class ObservationListItemComponent implements OnChanges {
   }
 
   onObservationLocationClick(): void {
-    this.mapService.zoomToFeatureInLayer(this.observation, 'Observations')
+    this.mapService.zoomToFeatureInLayer(this.observation, 'observations')
   }
 
   updateItem(): void {
@@ -178,6 +180,15 @@ export class ObservationListItemComponent implements OnChanges {
     }
 
     this.isUserFavorite = this.observation.favoriteUserIds.includes(this.userService.myself.id)
+
+    this.attachments = this.observation.attachments.filter(attachment => {
+      return this.observationForm.forms.find(observationForm => {
+        return observationForm.fields.find(field => {
+          return attachment.observationFormId === observationForm.remoteId && attachment.fieldName === field.name
+        })
+      }) != null
+    })
+
   }
 
   updateFavorites(): void {

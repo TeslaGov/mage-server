@@ -27,20 +27,35 @@ import { LocationComponent } from '../app/map/controls/location.component';
 import { AddObservationComponent } from '../app/map/controls/add-observation.component';
 import { LeafletComponent } from '../app/map/leaflet.component';
 import { ExportComponent } from '../app/export/export.component';
-import { AdminSettingsComponent } from '../app/admin/admin-settings/admin-settings.component';
 
+
+
+import { FeedService } from '@ngageoint/mage.web-core-lib/feed'
 import { ExportService } from '../app/export/export.service'
 import { FeedPanelService } from '../app/feed-panel/feed-panel.service'
 import { MapPopupService } from '../app/map/map-popup.service'
+import { PluginService } from '../app/plugin/plugin.service'
 
 import { FeedPanelComponent } from '../app/feed-panel/feed-panel.component';
+import { FeedItemMapPopupComponent } from '../app/feed/feed-item/feed-item-map/feed-item-map-popup.component'
 
 import { ObservationPopupComponent } from '../app/observation/observation-popup/observation-popup.component';
 import { ObservationListItemComponent } from '../app/observation/observation-list/observation-list-item.component';
 
 import { UserAvatarComponent } from '../app/user/user-avatar/user-avatar.component';
 import { UserPopupComponent } from '../app/user/user-popup/user-popup.component';
-import { AuthenticationCreateComponent } from '../app/admin/admin-settings/admin-settings';
+import { UserReadService } from '@ngageoint/mage.web-core-lib/user';
+
+import { ContactComponent } from '../app/contact/contact.component';
+
+import { AdminSettingsComponent } from '../app/admin/admin-settings/admin-settings.component';
+import { AdminMapComponent } from '../app/admin/admin-map/admin-map.component';
+import { AdminFeedsComponent } from '../app/admin/admin-feeds/admin-feeds.component';
+import { AdminFeedComponent } from '../app/admin/admin-feeds/admin-feed/admin-feed.component';
+import { AdminServiceComponent } from '../app/admin/admin-feeds/admin-service/admin-service.component'
+import { AdminFeedEditComponent } from '../app/admin/admin-feeds/admin-feed/admin-feed-edit/admin-feed-edit.component';
+import { AuthenticationCreateComponent } from '../app/admin/admin-authentication/admin-authentication-create/admin-authentication-create.component';
+import { AdminEventFormPreviewComponent } from '../app/admin/admin-event/admin-event-form/admin-event-form-preview/admin-event-form-preview.component';
 
 require('angular-minicolors');
 require('select2');
@@ -58,15 +73,20 @@ const app = angular.module('mage', [
   require('./auth/http-auth-interceptor')
 ]);
 
-// Downgraded Angular services 
 app
+  .directive('bootstrap', downgradeComponent({ component: BootstrapComponent }));
+
+app
+  .factory('FeedService', downgradeInjectable(FeedService))
   .factory('ExportService', downgradeInjectable(ExportService))
   .factory('FeedPanelService', downgradeInjectable(FeedPanelService))
-  .factory('MapPopupService', downgradeInjectable(MapPopupService));
+  .factory('MapPopupService', downgradeInjectable(MapPopupService))
+  .factory('PluginService', downgradeInjectable(PluginService))
+  // TODO: remove this once we have a new user service
+  .factory('UserReadService', downgradeInjectable(UserReadService))
 
-// Downgraded Angular components 
+// Downgraded Angular components
 app
-  .directive('bootstrap', downgradeComponent({ component: BootstrapComponent }))
   .directive('matIcon', downgradeComponent({ component: MatIcon }))
   .directive('matButton', downgradeComponent({ component: MatButton }))
   .directive('matToolbar', downgradeComponent({ component: MatToolbar }))
@@ -85,10 +105,18 @@ app
   .directive('mapControlSearch', downgradeComponent({ component: SearchComponent }))
   .directive('mapControlLocation', downgradeComponent({ component: LocationComponent }))
   .directive('mapControlAddObservation', downgradeComponent({ component: AddObservationComponent }))
+  .directive('feedItemMapPopup', downgradeComponent({ component: FeedItemMapPopupComponent }))
+  .directive('feeds', downgradeComponent({ component: AdminFeedsComponent }))
+  .directive('adminFeed', downgradeComponent({ component: AdminFeedComponent }))
+  .directive('adminService', downgradeComponent({ component: AdminServiceComponent }))
+  .directive('feedEdit', downgradeComponent({ component: AdminFeedEditComponent }))
   .directive('swagger', downgradeComponent({ component: SwaggerComponent }))
   .directive('export', downgradeComponent({ component: ExportComponent }))
+  .directive('upgradedAdminMapSettings', downgradeComponent({ component: AdminMapComponent }))
   .directive('upgradedAdminSettings', downgradeComponent({ component: AdminSettingsComponent }))
-  .directive('authenticationCreate', downgradeComponent({ component: AuthenticationCreateComponent }));
+  .directive('authenticationCreate', downgradeComponent({ component: AuthenticationCreateComponent }))
+  .directive('contact', downgradeComponent({ component: ContactComponent }))
+  .directive('adminEventFormPreview', downgradeComponent({ component: AdminEventFormPreviewComponent }));
 
 app
   .component('filterPanel', require('./filter/filter'))
@@ -125,12 +153,13 @@ require('./user');
 require('./admin');
 require('./material-components');
 
-config.$inject = ['$httpProvider', '$stateProvider', '$urlRouterProvider', '$urlServiceProvider', '$animateProvider'];
+config.$inject = ['$httpProvider', '$locationProvider', '$stateProvider', '$urlRouterProvider', '$urlServiceProvider', '$animateProvider'];
 
-function config($httpProvider, $stateProvider, $urlRouterProvider, $urlServiceProvider, $animateProvider) {  
+function config($httpProvider, $locationProvider, $stateProvider, $urlRouterProvider, $urlServiceProvider, $animateProvider) {
   $httpProvider.defaults.withCredentials = true;
-  $httpProvider.defaults.headers.post  = {'Content-Type': 'application/x-www-form-urlencoded'};
-
+  $httpProvider.defaults.headers.post  = { 'Content-Type': 'application/x-www-form-urlencoded' };
+  // TODO: this is the default hash prefix for angularjs 1.6+
+  $locationProvider.hashPrefix('!');
   $animateProvider.classNameFilter(/ng-animatable/);
 
   function resolveLogin() {
@@ -167,7 +196,7 @@ function config($httpProvider, $stateProvider, $urlRouterProvider, $urlServicePr
   $urlRouterProvider.otherwise('/signin');
 
   // TODO temp place for app states for angular 8
-  // this should probably move 
+  // this should probably move
   $stateProvider.state({
     name: 'swagger',
     url: '/swagger',
@@ -251,7 +280,7 @@ function config($httpProvider, $stateProvider, $urlRouterProvider, $urlServicePr
     component: "adminTeamEdit",
     resolve: resolveAdmin()
   });
-  
+
   $stateProvider.state('admin.team', {
     url: '/teams/:teamId',
     component: "adminTeam",
@@ -340,7 +369,7 @@ function config($httpProvider, $stateProvider, $urlRouterProvider, $urlServicePr
     component: "adminDevices",
     resolve: resolveAdmin()
   });
-  
+
   $stateProvider.state('admin.deviceCreate', {
     url: '/devices/new',
     component: "adminDeviceEdit",
@@ -381,6 +410,42 @@ function config($httpProvider, $stateProvider, $urlRouterProvider, $urlServicePr
   $stateProvider.state('admin.layerEdit', {
     url: '/layers/:layerId/edit',
     component: "adminLayerEdit",
+    resolve: resolveAdmin()
+  });
+
+  // Admin feed routes
+  $stateProvider.state('admin.feeds', {
+    url: '/feeds',
+    component: "adminFeeds",
+    resolve: resolveAdmin()
+  });
+  $stateProvider.state('admin.feed', {
+    url: '/feeds/:feedId',
+    component: "adminFeed",
+    resolve: resolveAdmin()
+  });
+  $stateProvider.state('admin.feedCreate', {
+    url: '/feeds/new',
+    component: "feedEdit",
+    resolve: resolveAdmin()
+  });
+  $stateProvider.state('admin.feedEdit', {
+    url: '/feeds/:feedId/edit',
+    component: "feedEdit",
+    resolve: resolveAdmin()
+  });
+
+  // Admin service routes
+  $stateProvider.state('admin.service', {
+    url: '/services/:serviceId',
+    component: "adminService",
+    resolve: resolveAdmin()
+  });
+
+  // Admin map routes
+  $stateProvider.state('admin.map', {
+    url: '/map',
+    component: "upgradedAdminMapSettings",
     resolve: resolveAdmin()
   });
 
@@ -450,7 +515,7 @@ function run($rootScope, $uibModal, $state, Api) {
           }
         };
         modalInstance.closed.then(modalClosed);
-        
+
       });
     }
   });

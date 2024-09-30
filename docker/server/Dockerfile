@@ -1,17 +1,15 @@
-FROM node:14.17.5
+FROM node:18-slim
 
-ARG MAGE_VERSION=6.0.0
+ARG service_version=latest
+ARG web_version=${service_version}
+ARG image_version=latest
+ARG msi_version=latest
 
 LABEL author="NGA"
 
-RUN apt-get update && apt-get -y install \
-        sudo \
-        git \
-        unzip \
-        curl \
-        graphicsmagick \
-        build-essential libjpeg-dev libsdl-pango-dev libcairo-dev libgif-dev \
-    && rm -rf /var/lib/apt/lists/*
+USER root
+
+RUN apt-get update
 
 RUN groupadd -r mage \
     && useradd -m -r -s /bin/bash -g mage mage \
@@ -19,21 +17,16 @@ RUN groupadd -r mage \
     && chown mage:mage /var/lib/mage
 
 USER mage
-
-ENV MAGE_HOME /home/mage/mage-server-${MAGE_VERSION}
-WORKDIR /home/mage
-
-RUN curl -L "https://github.com/ngageoint/mage-server/archive/${MAGE_VERSION}.zip" -o mage-server.zip \
-    && unzip mage-server.zip
-
+ENV MAGE_HOME /home/mage/instance
 WORKDIR ${MAGE_HOME}
-RUN rm -rf node_modules && \
-    mkdir node_modules && \
-    npm install && \
-    npm run build-web
+RUN ls -l \
+    && npm i --omit dev @ngageoint/mage.service@${service_version} \
+    && npm i --omit dev @ngageoint/mage.web-app@${web_version} \
+    && npm i --omit dev @ngageoint/mage.image.service@${image_version} \
+    && npm i --omit dev @ngageoint/mage.nga-msi@${msi_version} \
+    && ln -s ./node_modules/.bin/mage.service
 
 VOLUME /var/lib/mage
-
 EXPOSE 4242
 
-ENTRYPOINT ["node", "./app.js"]
+ENTRYPOINT [ "./mage.service", "--plugin", "@ngageoint/mage.image.service", "--plugin", "@ngageoint/mage.nga-msi" ]
