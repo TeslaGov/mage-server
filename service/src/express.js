@@ -13,9 +13,10 @@ const express = require("express")
   , AuthenticationInitializer = require('./authentication');
 
 const app = express();
+app.enable('trust proxy');
 app.use(function(req, res, next) {
   req.getRoot = function() {
-    return req.protocol + "://" + req.get('host');
+    return req.protocol + "://" + req.hostname;
   };
 
   req.getPath = function() {
